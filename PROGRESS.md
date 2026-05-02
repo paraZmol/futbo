@@ -12,8 +12,8 @@
 | 0 | Fundamentos del Proyecto | ✅ COMPLETA | 2026-05-02 |
 | 1 | Migraciones de Base de Datos | ✅ COMPLETA | 2026-05-02 |
 | 2 | Capa de Dominio | ✅ COMPLETA | 2026-05-02 |
-| 3 | Puertos de Aplicación y Casos de Uso Core | 🔄 EN PROGRESO | 2026-05-02 |
-| 4 | Infraestructura Backend | ⬜ PENDIENTE | — |
+| 3 | Puertos de Aplicación y Casos de Uso Core | ✅ COMPLETA | 2026-05-02 |
+| 4 | Infraestructura Backend | 🔄 EN PROGRESO | 2026-05-02 |
 | 5 | Frontend: App Usuario | ⬜ PENDIENTE | — |
 | 6 | Frontend: PWA Staff | ⬜ PENDIENTE | — |
 | 7 | Frontend: Dashboard Partner | ⬜ PENDIENTE | — |
