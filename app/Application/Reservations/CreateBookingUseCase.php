@@ -106,16 +106,20 @@ final readonly class CreateBookingUseCase
                 qrToken: $this->ids->generate('qr'),
             );
 
-            $this->bookings->save($booking);
+            // save() returns the real persisted ID (may differ from 0 on first insert)
+            $persistedId = $this->bookings->save($booking);
 
             // 3rd line of defense: UNIQUE(slot_id) constraint on booking_slots
             foreach ($slotEntities as $slot) {
                 $this->bookings->linkSlot(
-                    $booking->id,
+                    $persistedId,
                     $slot->id->value(),
                     $slot->unitPrice->toDecimal(),
                 );
             }
+
+            // Re-fetch to get the booking with the real ID for the output
+            $booking = $this->bookings->findOrFail($persistedId);
 
             return BookingOutput::fromDomain($booking);
         });

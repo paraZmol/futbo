@@ -53,7 +53,7 @@ final class InMemoryBookingRepository implements BookingRepository
         ));
     }
 
-    public function save(Booking $booking): void
+    public function save(Booking $booking): \App\Domain\Shared\ValueObjects\BookingId
     {
         // readonly properties cannot be mutated — reconstitute with real ID on first save
         if ($booking->id->value() === 0) {
@@ -88,6 +88,8 @@ final class InMemoryBookingRepository implements BookingRepository
         if ($booking->qrToken() !== null) {
             $this->byQrToken[$booking->qrToken()] = $id;
         }
+
+        return $booking->id;
     }
 
     public function linkSlot(BookingId $bookingId, int $slotId, string $unitPriceSnapshot): void

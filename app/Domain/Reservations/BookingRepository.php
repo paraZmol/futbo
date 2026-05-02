@@ -18,7 +18,8 @@ interface BookingRepository
     /** @return Booking[] */
     public function findByUser(UserId $userId, ?BookingStatus $status = null): array;
 
-    public function save(Booking $booking): void;
+    /** Returns the persisted BookingId (may differ from input when ID was 0 on first insert). */
+    public function save(Booking $booking): BookingId;
 
     public function linkSlot(BookingId $bookingId, int $slotId, string $unitPriceSnapshot): void;
 }
