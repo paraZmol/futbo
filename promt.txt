@@ -1,53 +1,24 @@
-CORRECCIÓN DE RUMBO: ENFOQUE UI/UX RESPONSIVO
+EXCELENTE. El layout base y la paleta de colores están aprobados. 
 
-Tienes razón en tu análisis. Me equivoqué al no especificar el enfoque de diseño. Para aclarar: este sistema NO es solo una app móvil. Es una plataforma web responsiva (Desktop, Tablet, Mobile) construida con React y Tailwind.
+PASO 1: CONSTRUCCIÓN DEL HOME (FEED PRINCIPAL) Y MOCK DATA REALISTA
 
-A partir de este momento, además de las reglas estrictas de backend y arquitectura que ya te di, debes adoptar el rol de un Diseñador UI/UX Senior. Quiero una interfaz de nivel mundial, intuitiva, limpia y orientada a la conversión.
+Ahora vamos a maquetar la página de inicio (Home / Feed de Descubrimiento). Revisando los requerimientos de negocio, el Home no solo muestra canchas disponibles, sino que también es un descubridor de EVENTOS PÚBLICOS (Torneos, Polladas, Eventos Sociales) según el RF-06 del sistema.
 
-1. REFERENCIAS VISUALES Y MENTALIDAD DE DISEÑO
+1. ESTRUCTURA VISUAL DEL HOME (UI/UX)
+El Home debe tener el siguiente flujo de arriba hacia abajo:
+- El Navbar / Header que ya definimos.
+- El Buscador Flotante (Hero section compacto).
+- SECCIÓN 1: "Eventos Cerca de Ti" (Carrusel Horizontal). Esta sección debe tener `overflow-x-auto snap-x` para hacer scroll lateral fluido en móvil. Las tarjetas de eventos deben verse distintas a las de las canchas: deben resaltar la FECHA (ej. un cuadrito de calendario), el TIPO (Torneo o Social) y el Costo de Entrada.
+- SECCIÓN 2: "Canchas para jugar hoy" (Grid). El grid responsivo que acordamos (1 columna en móvil, 3 o 4 en desktop) con las tarjetas de canchas deportivas.
 
-Inspiración Estructural: Toma como referencia principal a Airbnb. Quiero esa limpieza visual, mucho espacio en blanco (whitespace), bordes redondeados (rounded-2xl o rounded-xl en Tailwind), y sombras suaves (shadow-sm y shadow-md en hover).
+2. MOCK DATA REALISTA (CRÍTICO)
+No quiero que uses datos genéricos como "Event 1" o "Lorem Ipsum". Genera un array de datos de prueba en TypeScript/JavaScript con contexto 100% PERUANO.
+- Para los Eventos (`events`): Ejemplos como "Gran Torneo Relámpago Fútbol 7", "Pollada Bailable Pro-Salud", "Campeonato de Verano". Costos de entrada como "S/ 50.00 por equipo" o "S/ 15.00".
+- Para las Canchas (`venues`): Ejemplos como "Complejo Deportivo El 10", "Canchas La Losa", "El Rey del Gras". Distancias realistas (ej. "A 1.2 km"). Precios base en Soles (PEN): "S/ 80.00 / hr".
 
-Inspiración Funcional: Toma referencias de apps deportivas como Playtomic. La interfaz debe transmitir acción, con colores de acento claros (te sugiero un Verde Esmeralda deportivo o un Azul Eléctrico para los botones de Call-To-Action).
+3. ESTILOS Y COMPONENTES
+- Para las etiquetas (badges), usa el color de acento que definimos para destacar si es "Torneo" (ej. fondo violeta/azul oscuro) o "Evento Social" (ej. fondo ámbar/naranja).
+- Sigue aplicando el "Minimalismo Atlético" (espacio en blanco, bordes redondeados, sombras suaves).
 
-Modo Oscuro/Claro: Por ahora enfócate en un Modo Claro (Light Mode) ultra limpio. Fondo principal gris muy claro (bg-gray-50) y tarjetas en blanco puro (bg-white).
-
-2. ESTRUCTURA DE LAYOUTS (ESCRITORIO VS. MÓVIL)
-No puedes usar el mismo layout para ambas pantallas. Debes usar Tailwind para hacer el cambio estructural:
-
-Navegación:
-
-Desktop (md y superiores): Top Navbar fijo con el Logo a la izquierda, enlaces al centro y perfil/acciones a la derecha.
-
-Mobile (sm e inferiores): Bottom Navigation Bar fijo en la parte inferior para los usuarios finales (Jugadores). Para el Admin/Partner, menú lateral (Sidebar) que se oculta bajo un menú hamburguesa.
-
-Página Principal (Home / Feed de Canchas):
-
-Hero Section: En desktop, un banner atractivo con un buscador central flotante (¿Dónde?, ¿Cuándo?, Hora). En móvil, un buscador compacto pegado arriba.
-
-Resultados: Un grid responsive (grid-cols-1 en móvil, grid-cols-2 en tablet, grid-cols-3 o 4 en desktop). Las tarjetas (Cards) de las canchas deben tener la foto principal arriba, título, ubicación, distancia y precio por hora. Usa efecto de escalado suave al hacer hover (hover:scale-[1.02] transition-transform).
-
-Flujo de Reserva (Página de Detalles del Venue):
-
-Desktop: Layout de dos columnas. A la izquierda: fotos en galería estilo Airbnb, descripción de la cancha y la grilla de horarios (slots). A la derecha: Un componente Sticky (fijo al hacer scroll) que muestre el "Resumen de la reserva" con el desglose de precios y el botón gigante de "Pagar Anticipo S/ 1.00".
-
-Mobile: Layout apilado (una sola columna). El resumen de reserva no debe estorbar, se convierte en una barra fija en la parte inferior de la pantalla (Sticky Bottom Bar) con el precio y el botón "Reservar" siempre visible.
-
-3. MICRO-INTERACCIONES Y UX
-
-Carga: Nada de pantallas en blanco. Usa Skeleton Loaders (animaciones de pulso en Tailwind animate-pulse) mientras se hace fetching de datos desde Laravel.
-
-Feedback: Todo botón debe tener un estado :hover, :active, y :disabled.
-
-Grilla de Horarios (Slots): Los bloques de tiempo deben ser botones fácilmente tocables (mínimo 44x44px para dedos en móvil). Si están ocupados (Gris/Deshabilitado), si están libres (Blanco con borde), si están seleccionados (Color primario lleno).
-
-4. LO QUE NECESITO QUE HAGAS AHORA
-Antes de escribir el código de los componentes React, preséntame un Esquema de Diseño (Design System) y Layout. Descríbeme:
-
-La paleta de colores de Tailwind que usarás (Primary, Secondary, Background, Text).
-
-Cómo estructurarás los componentes principales en Desktop y cómo se transformarán en Mobile.
-
-Confirma que entiendes que la lógica de negocio, arquitectura y concurrencia del Backend (establecida en nuestras reglas maestras) permanece intacta e independiente de estas mejoras visuales.
-
-Espero tu propuesta visual y de componentes.
+LO QUE DEBES HACER AHORA:
+Genera el código completo del componente `Home.tsx` (o equivalente). Incluye la estructura de datos simulada (Mock Data) dentro del mismo archivo para que el componente funcione por sí solo y yo pueda visualizar exactamente cómo interactúan el carrusel de eventos y la grilla de canchas responsivas. Usa íconos de 'lucide-react' para enriquecer la interfaz.

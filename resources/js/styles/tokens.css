@@ -1,110 +1,30 @@
 @import "tailwindcss";
 
-/* ─── DESIGN SYSTEM — CanchasApp ─────────────────────────────
-   Inspiración: Airbnb (limpieza, whitespace) + Playtomic (deportivo)
-   Paleta: Verde Esmeralda primario + Slate oscuro secundario
-──────────────────────────────────────────────────────────── */
-
-@theme {
-  /* Colores primarios */
-  --color-primary-50:  #ecfdf5;
-  --color-primary-100: #d1fae5;
-  --color-primary-500: #10b981;
-  --color-primary-600: #059669;
-  --color-primary-700: #047857;
-
-  /* Secundario Slate */
-  --color-slate-850: #1a2535;
-
-  /* Fuente */
-  --font-sans: 'Inter', 'Plus Jakarta Sans', system-ui, sans-serif;
-}
+/* ─── MINIMALISMO ATLÉTICO — CanchasApp Design System ──────── */
 
 :root {
-  /* ── Brand ── */
-  --primary:         #059669;   /* emerald-600 — CTA, slots seleccionados */
-  --primary-hover:   #047857;   /* emerald-700 */
-  --primary-light:   #ecfdf5;   /* emerald-50 */
-  --primary-text:    #065f46;   /* emerald-900 */
-
-  /* ── Neutrales ── */
-  --bg-page:         #f9fafb;   /* gray-50 — fondo de página */
-  --bg-card:         #ffffff;   /* blanco — tarjetas */
-  --bg-muted:        #f3f4f6;   /* gray-100 — fondos secundarios */
-  --border:          #e5e7eb;   /* gray-200 */
-  --border-focus:    #059669;
-
-  /* ── Texto ── */
-  --text-primary:    #111827;   /* gray-900 */
-  --text-secondary:  #6b7280;   /* gray-500 */
-  --text-muted:      #9ca3af;   /* gray-400 */
-  --text-inverse:    #ffffff;
-
-  /* ── Navbar ── */
-  --nav-bg:          #ffffff;
-  --nav-border:      #e5e7eb;
-  --nav-text:        #374151;   /* gray-700 */
-  --nav-active:      #059669;
-
-  /* ── Precio ── */
-  --price-color:     #059669;
-
-  /* ── Estados de slot ── */
-  --slot-libre-bg:      #ffffff;
-  --slot-libre-border:  #059669;
-  --slot-libre-text:    #059669;
-  --slot-ocupado-bg:    #f3f4f6;
-  --slot-ocupado-text:  #9ca3af;
-  --slot-selected-bg:   #059669;
-  --slot-selected-text: #ffffff;
-  --slot-pending-bg:    #fef3c7;
-  --slot-pending-text:  #92400e;
-
-  /* ── Sombras ── */
-  --shadow-card:  0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.06);
-  --shadow-hover: 0 4px 12px 0 rgb(0 0 0 / 0.12);
-  --shadow-panel: 0 0 0 1px rgb(0 0 0 / 0.05), 0 8px 32px rgb(0 0 0 / 0.10);
+  --font-base: 'Inter', 'Plus Jakarta Sans', system-ui, sans-serif;
 }
 
-/* ── Reset base ─────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
 
+html { scroll-behavior: smooth; }
+
 body {
-  font-family: 'Inter', 'Plus Jakarta Sans', system-ui, sans-serif;
-  background-color: var(--bg-page);
-  color: var(--text-primary);
+  font-family: var(--font-base);
+  background-color: #f8fafc; /* slate-50 */
+  color: #0f172a;            /* slate-900 */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ── Utilidades custom ──────────────────────────────────── */
-.card {
-  background: var(--bg-card);
-  border-radius: 1rem;
-  box-shadow: var(--shadow-card);
-  border: 1px solid var(--border);
-}
-
-.card-hover {
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
-}
-.card-hover:hover {
-  box-shadow: var(--shadow-hover);
-  transform: translateY(-2px);
-}
-
-.btn-primary {
-  background-color: var(--primary);
-  color: var(--text-inverse);
-  font-weight: 600;
-  border-radius: 0.75rem;
-  transition: background-color 0.15s ease, transform 0.1s ease;
-}
-.btn-primary:hover  { background-color: var(--primary-hover); }
-.btn-primary:active { transform: scale(0.98); }
-.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-
-/* Scrollbar suave */
-::-webkit-scrollbar { width: 6px; height: 6px; }
+/* Scrollbar minimalista */
+::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+
+/* Focus ring consistente */
+:focus-visible {
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
+}
