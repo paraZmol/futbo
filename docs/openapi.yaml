@@ -1,0 +1,1094 @@
+openapi: 3.1.0
+
+info:
+  title: Ecosistema Digital de Canchas — API
+  version: 1.0.0
+  description: |
+    API REST del marketplace de canchas deportivas.
+    Mercado objetivo: Perú y Latinoamérica. Moneda: PEN (soles).
+
+    **Reglas globales:**
+    - Todos los endpoints viven bajo `/api/v1/`
+    - Timestamps en ISO 8601 con sufijo `Z` (UTC)
+    - Montos como string decimal: `"80.00"`
+    - IDs públicos con prefijo ULID: `bkg_01...`, `slt_01...`
+    - POSTs mutantes requieren header `Idempotency-Key: <uuid-v4>`
+  contact:
+    name: Equipo de Arquitectura
+  license:
+    name: Privado
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Desarrollo local
+
+# ─────────────────────────────────────────────────────────────
+# SECURITY SCHEMES
+# ─────────────────────────────────────────────────────────────
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token Sanctum obtenido en /auth/login
+
+  # ── Reusable schemas ────────────────────────────────────────
+  schemas:
+
+    # Envelope estándar de error
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              example: SLOT_NOT_AVAILABLE
+            message:
+              type: string
+              example: El horario seleccionado ya no está disponible.
+            details:
+              type: object
+              nullable: true
+            traceId:
+              type: string
+              nullable: true
+
+    # Paginación
+    PaginationMeta:
+      type: object
+      properties:
+        page:       { type: integer, example: 1 }
+        perPage:    { type: integer, example: 20 }
+        total:      { type: integer, example: 134 }
+        totalPages: { type: integer, example: 7 }
+
+    # ── Auth ──
+    AuthUser:
+      type: object
+      properties:
+        id:       { type: integer }
+        publicId: { type: string, example: usr_01HZXABC }
+        name:     { type: string, example: María Torres }
+        email:    { type: string, format: email }
+        role:
+          type: string
+          enum: [user, partner, staff, admin]
+
+    AuthTokenResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            token: { type: string }
+            user:  { $ref: '#/components/schemas/AuthUser' }
+
+    # ── Venue ──
+    Venue:
+      type: object
+      properties:
+        id:               { type: string, example: vnu_01HZXABC }
+        name:             { type: string, example: Complejo Los Pinos }
+        address:          { type: string }
+        city:             { type: string, example: Lima }
+        lat:              { type: number, format: float }
+        lng:              { type: number, format: float }
+        distanceM:        { type: number, nullable: true }
+        minPrice:         { type: string, example: "60.00" }
+        currency:         { type: string, example: PEN }
+        nextAvailableSlot:{ type: string, format: date-time, nullable: true }
+        rating:           { type: number, nullable: true }
+        reviewCount:      { type: integer, nullable: true }
+        photos:           { type: array, items: { type: string } }
+        amenities:        { type: array, items: { type: string } }
+        status:
+          type: string
+          enum: [active, pending, suspended]
+
+    Field:
+      type: object
+      properties:
+        id:        { type: integer }
+        publicId:  { type: string }
+        name:      { type: string, example: "Cancha 1 - Grass Sintético" }
+        sport:
+          type: string
+          enum: [futbol5, futbol7, futbol11, padel, basket, tenis, otro]
+        surface:
+          type: string
+          enum: [grass_natural, grass_sintetico, cemento, parquet, otro]
+        isIndoor:  { type: boolean }
+        isActive:  { type: boolean }
+
+    # ── Slot ──
+    Slot:
+      type: object
+      properties:
+        id:            { type: integer }
+        startsAt:      { type: string, format: date-time, example: "2026-06-01T10:00:00Z" }
+        endsAt:        { type: string, format: date-time, example: "2026-06-01T11:00:00Z" }
+        unitPrice:     { type: string, example: "80.00" }
+        depositAmount: { type: string, example: "24.00" }
+        currency:      { type: string, example: PEN }
+        state:
+          type: string
+          enum: [available, pending_payment, reserved, event_occupied, completed, expired]
+
+    # ── Booking ──
+    Booking:
+      type: object
+      properties:
+        id:            { type: integer }
+        publicId:      { type: string, example: bkg_01HZXABC }
+        status:
+          type: string
+          enum: [pending_payment, reserved, checked_in, completed, no_show, cancelled, refunded]
+        source:
+          type: string
+          enum: [app, web, walk_in]
+        priceTotal:    { type: string, example: "80.00" }
+        depositAmount: { type: string, example: "24.00" }
+        balanceDue:    { type: string, example: "56.00" }
+        currency:      { type: string, example: PEN }
+        slotStartsAt:  { type: string, format: date-time }
+        slotEndsAt:    { type: string, format: date-time }
+        qrToken:       { type: string, nullable: true }
+
+    # ── Shift ──
+    Shift:
+      type: object
+      properties:
+        id:           { type: integer }
+        status:
+          type: string
+          enum: [open, closed]
+        openedAt:     { type: string, format: date-time }
+        closedAt:     { type: string, format: date-time, nullable: true }
+        cashExpected: { type: string, example: "150.00" }
+        cashDelivered:{ type: string, nullable: true }
+        cashVariance: { type: string, nullable: true }
+
+    # ── CheckIn ──
+    CheckInResult:
+      type: object
+      properties:
+        bookingPublicId: { type: string }
+        status:          { type: string }
+        balanceDue:      { type: string, example: "56.00" }
+        currency:        { type: string }
+        slotStartsAt:    { type: string, format: date-time }
+        slotEndsAt:      { type: string, format: date-time }
+
+  # ── Reusable parameters ──────────────────────────────────────
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUID v4 único por intento. Permite reintentar sin duplicar efectos.
+
+  # ── Reusable responses ───────────────────────────────────────
+  responses:
+    Unauthorized:
+      description: Token ausente o inválido
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+          example:
+            error: { code: UNAUTHORIZED, message: Token inválido o expirado. }
+
+    Forbidden:
+      description: Token válido pero sin permisos
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+    NotFound:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+          example:
+            error: { code: NOT_FOUND, message: Recurso no encontrado. }
+
+    Conflict:
+      description: Estado del recurso impide la operación
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+    ValidationError:
+      description: Input válido sintácticamente pero falla reglas de negocio
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+          example:
+            error:
+              code: VALIDATION_FAILED
+              message: Los datos enviados no son válidos.
+              details: { slot_ids: ["El campo slot_ids es obligatorio."] }
+
+    IdempotencyKeyMissing:
+      description: Falta el header Idempotency-Key
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+          example:
+            error: { code: IDEMPOTENCY_KEY_MISSING, message: El header Idempotency-Key es obligatorio. }
+
+# ─────────────────────────────────────────────────────────────
+# PATHS
+# ─────────────────────────────────────────────────────────────
+paths:
+
+  # ══════════════════════════════════════════════
+  # AUTH
+  # ══════════════════════════════════════════════
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Registrar nuevo usuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name:     { type: string, example: María Torres }
+                email:    { type: string, format: email }
+                password: { type: string, minLength: 8 }
+                phone:    { type: string, nullable: true, example: "+51999000001" }
+      responses:
+        '201':
+          description: Usuario registrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthTokenResponse' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Iniciar sesión
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:    { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200':
+          description: Login exitoso
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthTokenResponse' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Cerrar sesión (invalida token)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '204': { description: Sesión cerrada }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ══════════════════════════════════════════════
+  # VENUES
+  # ══════════════════════════════════════════════
+
+  /venues:
+    get:
+      tags: [Venues]
+      summary: Buscar venues por proximidad y filtros
+      parameters:
+        - name: lat
+          in: query
+          schema: { type: number, format: float }
+          example: -12.0464
+        - name: lng
+          in: query
+          schema: { type: number, format: float }
+          example: -77.0428
+        - name: sport
+          in: query
+          schema:
+            type: string
+            enum: [futbol5, futbol7, futbol11, padel, basket, tenis, otro]
+        - name: date
+          in: query
+          schema: { type: string, format: date }
+          example: "2026-06-01"
+        - name: radiusKm
+          in: query
+          schema: { type: integer, default: 10 }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: perPage
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          description: Lista de venues ordenados por proximidad
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Venue' }
+                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+        '429':
+          description: Rate limit excedido (60/min por usuario)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  /venues/{venueId}:
+    get:
+      tags: [Venues]
+      summary: Detalle de un venue
+      parameters:
+        - name: venueId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Detalle del venue
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Venue' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /venues/{venueId}/fields:
+    get:
+      tags: [Venues]
+      summary: Canchas de un venue
+      parameters:
+        - name: venueId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Lista de canchas activas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Field' }
+
+  # ══════════════════════════════════════════════
+  # SLOTS
+  # ══════════════════════════════════════════════
+
+  /fields/{fieldId}/slots:
+    get:
+      tags: [Slots]
+      summary: Slots de una cancha en una fecha
+      parameters:
+        - name: fieldId
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: date
+          in: query
+          required: true
+          schema: { type: string, format: date }
+          example: "2026-06-01"
+      responses:
+        '200':
+          description: Todos los slots del día (disponibles y ocupados)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Slot' }
+
+  # ══════════════════════════════════════════════
+  # BOOKINGS (Usuario)
+  # ══════════════════════════════════════════════
+
+  /bookings:
+    post:
+      tags: [Bookings]
+      summary: Crear reserva (hold)
+      description: |
+        Crea una reserva en estado `pending_payment`.
+        Aplica las 3 líneas de defensa contra concurrencia:
+        lock Redis + optimistic locking + UNIQUE en booking_slots.
+        La reserva expira en 10 minutos si no llega el webhook de pago.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [venue_id, field_id, slot_ids]
+              properties:
+                venue_id:
+                  type: integer
+                field_id:
+                  type: integer
+                slot_ids:
+                  type: array
+                  items: { type: integer }
+                  minItems: 1
+                  maxItems: 4
+                  description: IDs de slots contiguos (máximo 4 por reserva)
+      responses:
+        '201':
+          description: Reserva creada en estado pending_payment
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Booking' }
+        '400': { $ref: '#/components/responses/IdempotencyKeyMissing' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409':
+          description: Slot ya reservado o lock no adquirido
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+              example:
+                error:
+                  code: SLOT_NOT_AVAILABLE
+                  message: El horario seleccionado ya no está disponible.
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+    get:
+      tags: [Bookings]
+      summary: Mis reservas
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending_payment, reserved, checked_in, completed, no_show, cancelled, refunded]
+      responses:
+        '200':
+          description: Lista de reservas del usuario autenticado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Booking' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /bookings/{id}/cancel:
+    post:
+      tags: [Bookings]
+      summary: Cancelar reserva
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string, example: user_request }
+      responses:
+        '200':
+          description: Reserva cancelada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      cancelled: { type: boolean }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: La reserva no se puede cancelar en su estado actual
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+              example:
+                error:
+                  code: BOOKING_NOT_CANCELLABLE
+                  message: La reserva no se puede cancelar desde el estado 'completed'.
+
+  # ══════════════════════════════════════════════
+  # WEBHOOKS
+  # ══════════════════════════════════════════════
+
+  /webhooks/{gateway}:
+    post:
+      tags: [Webhooks]
+      summary: Recibir webhook de pasarela de pago
+      description: |
+        Endpoint exclusivo para webhooks de la pasarela.
+        **No requiere autenticación Bearer** — se valida por firma HMAC-SHA256.
+
+        Pipeline obligatorio:
+        1. Verificar firma `X-Signature` con HMAC-SHA256
+        2. Verificar timestamp `X-Timestamp` (≤ 5 minutos)
+        3. Deduplicar con `webhook_events`
+        4. Encolar job de procesamiento
+        5. Responder 200 OK inmediatamente
+
+        **Solo este webhook puede autorizar la transición `pending_payment → reserved`.**
+      parameters:
+        - name: gateway
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [culqi, mercadopago, stripe]
+        - name: X-Signature
+          in: header
+          required: true
+          schema: { type: string }
+          description: HMAC-SHA256 del body firmado con el webhook secret
+        - name: X-Timestamp
+          in: header
+          required: true
+          schema: { type: string }
+          description: Unix timestamp del momento de envío
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: ID único del evento en la pasarela
+                type:
+                  type: string
+                  example: charge.succeeded
+                metadata:
+                  type: object
+                  properties:
+                    booking_id: { type: integer }
+      responses:
+        '200': { description: Webhook recibido y encolado }
+        '401':
+          description: Firma inválida o timestamp demasiado antiguo
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  # ══════════════════════════════════════════════
+  # STAFF
+  # ══════════════════════════════════════════════
+
+  /staff/shifts:
+    post:
+      tags: [Staff]
+      summary: Abrir turno
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [venue_id]
+              properties:
+                venue_id: { type: integer }
+      responses:
+        '201':
+          description: Turno abierto
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Shift' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409':
+          description: Ya existe un turno abierto para este staff en este venue
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+              example:
+                error:
+                  code: SHIFT_ALREADY_OPEN
+                  message: Ya tienes un turno abierto en este venue.
+
+  /staff/shifts/{id}/close:
+    post:
+      tags: [Staff]
+      summary: Cerrar turno con balance de caja
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cash_delivered]
+              properties:
+                cash_delivered:
+                  type: number
+                  format: float
+                  example: 150.00
+                  description: Efectivo entregado en soles
+                notes:
+                  type: string
+                  nullable: true
+      responses:
+        '200':
+          description: Turno cerrado con balance registrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Shift' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /staff/check-in:
+    post:
+      tags: [Staff]
+      summary: Validar QR de un cliente (check-in)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [qr_token]
+              properties:
+                qr_token: { type: string }
+      responses:
+        '200':
+          description: Check-in exitoso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/CheckInResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422':
+          description: QR inválido, expirado o fuera de ventana horaria
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+              example:
+                error:
+                  code: CHECKIN_INVALID
+                  message: "No se puede hacer check-in: demasiado temprano."
+
+  /staff/bookings/{id}/no-show:
+    post:
+      tags: [Staff]
+      summary: Marcar reserva como No-Show
+      description: |
+        Disponible solo entre los minutos 15 y 45 después del inicio del slot.
+        El anticipo se retiene. El slot vuelve a `available`.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: No-show registrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      no_show: { type: boolean }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /staff/walk-ins:
+    post:
+      tags: [Staff]
+      summary: Crear reserva presencial (walk-in)
+      description: |
+        Crea una reserva directamente en estado `reserved` sin pasarela de pago.
+        El pago es 100% en efectivo al momento.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [venue_id, field_id, slot_ids]
+              properties:
+                venue_id:  { type: integer }
+                field_id:  { type: integer }
+                slot_ids:
+                  type: array
+                  items: { type: integer }
+                  minItems: 1
+                  maxItems: 4
+      responses:
+        '201':
+          description: Walk-in creado y confirmado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Booking' }
+        '400': { $ref: '#/components/responses/IdempotencyKeyMissing' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409':
+          description: Slot ya ocupado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  /staff/bookings/today:
+    get:
+      tags: [Staff]
+      summary: Reservas del día para el venue del turno activo
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: venue_id
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Lista de reservas del día ordenadas por hora
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Booking' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ══════════════════════════════════════════════
+  # PARTNER
+  # ══════════════════════════════════════════════
+
+  /partner/venues:
+    get:
+      tags: [Partner]
+      summary: Mis venues (como partner)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Venues del partner autenticado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Venue' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /partner/venues/{venueId}/bookings:
+    get:
+      tags: [Partner]
+      summary: Reservas del venue en una fecha
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: venueId
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: date
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: status
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Reservas del venue filtradas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Booking' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /partner/venues/{venueId}/schedule:
+    get:
+      tags: [Partner]
+      summary: Grilla de slots del día para todas las canchas del venue
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: venueId
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: date
+          in: query
+          required: true
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Slots agrupados por cancha para la grilla del día
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        fieldId:       { type: integer }
+                        fieldName:     { type: string }
+                        slotId:        { type: integer }
+                        startsAt:      { type: string, format: date-time }
+                        endsAt:        { type: string, format: date-time }
+                        state:         { type: string }
+                        bookingId:     { type: integer, nullable: true }
+                        bookingStatus: { type: string, nullable: true }
+                        guestName:     { type: string, nullable: true }
+
+  /partner/venues/{venueId}/analytics:
+    get:
+      tags: [Partner]
+      summary: Analytics del venue en un rango de fechas
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: venueId
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: date_from
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: date_to
+          in: query
+          required: true
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: KPIs del venue en el rango solicitado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      totalBookings:    { type: integer }
+                      occupancyPercent: { type: number }
+                      totalRevenue:     { type: string, example: "640.00" }
+                      pendingBalance:   { type: string, example: "320.00" }
+                      currency:         { type: string, example: PEN }
+
+  # ══════════════════════════════════════════════
+  # ADMIN
+  # ══════════════════════════════════════════════
+
+  /admin/partners:
+    get:
+      tags: [Admin]
+      summary: Listar partners (con filtro de estado)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, active, suspended]
+      responses:
+        '200':
+          description: Lista de partners
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:         { type: integer }
+                        name:       { type: string }
+                        email:      { type: string }
+                        createdAt:  { type: string, format: date-time }
+                        venueCount: { type: integer }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/partners/{userId}/approve:
+    post:
+      tags: [Admin]
+      summary: Aprobar un partner pendiente
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Partner aprobado — sus venues pasan a active
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      approved: { type: boolean }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/partners/{userId}/suspend:
+    post:
+      tags: [Admin]
+      summary: Suspender un partner
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Partner suspendido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      suspended: { type: boolean }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/audit-logs:
+    get:
+      tags: [Admin]
+      summary: Consultar audit logs (inmutables)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: entity_type
+          in: query
+          schema: { type: string, example: Booking }
+        - name: date_from
+          in: query
+          schema: { type: string, format: date }
+        - name: date_to
+          in: query
+          schema: { type: string, format: date }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+      responses:
+        '200':
+          description: Entradas del audit log
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:          { type: integer }
+                        userId:      { type: integer, nullable: true }
+                        action:      { type: string, example: booking.cancelled }
+                        subjectType: { type: string, example: Booking }
+                        subjectId:   { type: integer }
+                        createdAt:   { type: string, format: date-time }
+                        ipAddress:   { type: string, nullable: true }
+                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+# ─────────────────────────────────────────────────────────────
+# TAGS
+# ─────────────────────────────────────────────────────────────
+tags:
+  - name: Auth
+    description: Registro, login y logout
+  - name: Venues
+    description: Búsqueda geoespacial y detalle de complejos
+  - name: Slots
+    description: Disponibilidad horaria de canchas
+  - name: Bookings
+    description: Reservas del usuario (crear, cancelar, listar)
+  - name: Webhooks
+    description: Notificaciones firmadas HMAC de pasarela de pago
+  - name: Staff
+    description: Operaciones del staff (turno, QR, walk-in)
+  - name: Partner
+    description: Dashboard y analítica del dueño del complejo
+  - name: Admin
+    description: Backoffice interno de la plataforma
