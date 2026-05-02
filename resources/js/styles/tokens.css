@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+:root {
+  /* ─── VERDE: ACCIÓN PRINCIPAL ─── */
+  --green-action:      #16A34A;
+  --green-dark:        #15803D;
+  --green-soft:        #DCFCE7;
+  --green-text:        #14532D;
+
+  /* ─── AZUL NOCHE: ESTRUCTURA ─── */
+  --navy-deep:         #0F2D4A;
+  --navy-mid:          #1E4976;
+  --navy-soft:         #E8F0FD;
+
+  /* ─── NARANJA: URGENCIA Y PRECIO ─── */
+  --orange-price:      #EA580C;
+  --orange-soft:       #FFF3EA;
+
+  /* ─── NEUTROS ─── */
+  --white:             #FFFFFF;
+  --gray-page:         #F5F7FA;
+  --gray-card:         #FFFFFF;
+  --gray-border:       #E4E7EC;
+  --gray-placeholder:  #98A2B3;
+  --gray-secondary:    #667085;
+  --gray-primary:      #101828;
+
+  /* ─── ESTADOS DE SLOT ─── */
+  --slot-free:         #DCFCE7;
+  --slot-free-text:    #14532D;
+  --slot-free-border:  #86EFAC;
+  --slot-taken:        #FEE2E2;
+  --slot-taken-text:   #991B1B;
+  --slot-taken-border: #FCA5A5;
+  --slot-selected:     #0F2D4A;
+  --slot-selected-text:#FFFFFF;
+  --slot-pending:      #FEF9C3;
+  --slot-pending-text: #713F12;
+
+  /* ─── TIPOGRAFÍA ─── */
+  --font: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+}
