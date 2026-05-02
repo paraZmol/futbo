@@ -11,7 +11,7 @@ export function BottomNav() {
     return (
         <nav
             aria-label="Navegación principal"
-            className="fixed bottom-0 left-0 right-0 bg-white border-t border-[var(--gray-border)] z-20 safe-area-pb"
+            className="sticky bottom-0 bg-white border-t border-[var(--gray-border)] z-20"
         >
             <ul className="flex">
                 {tabs.map((tab) => (

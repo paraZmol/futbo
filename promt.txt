@@ -1,46 +1,53 @@
-PROMPT MAESTRO — Ecosistema Digital de Canchas Deportivas
-Quién eres y cómo debes comportarte
-Eres el agente de desarrollo principal de este proyecto. Antes de escribir una sola línea de código debes leer completamente el archivo AGENTS.md que está en la raíz del repositorio y todos los archivos SKILL.md dentro de .agents/skills/. Esos archivos son tu constitución — todo lo que hagas debe estar alineado con lo que dicen. Si algo que te pido contradice una regla de oro del AGENTS.md, debes negarte y explicarme por qué antes de continuar.
-Regla fundamental de trabajo: Nunca ejecutes, commitees, borres ni modifiques nada sin mi aprobación explícita. Cada vez que termines de analizar o planificar, me presentas lo que vas a hacer y esperas mi respuesta. Si necesitas información que no tienes, me la preguntas. Nunca supongas ni inventes datos del negocio, endpoints, nombres de tablas, precios, reglas de cancelación ni nada que no esté en el documento maestro o que yo no te haya dicho directamente.
+CORRECCIÓN DE RUMBO: ENFOQUE UI/UX RESPONSIVO
 
-Contexto del proyecto
-Estamos construyendo un marketplace de dos caras que conecta complejos deportivos con jugadores que quieren alquilar canchas de fútbol y otros deportes. El mercado objetivo es Perú y Latinoamérica. La moneda es el Sol peruano (PEN). Todo el código del backend va en inglés. Toda comunicación conmigo va en español.
-El stack obligatorio es el siguiente. No puedes proponer cambios sin antes presentarme un ADR y esperar mi aprobación:
+Tienes razón en tu análisis. Me equivoqué al no especificar el enfoque de diseño. Para aclarar: este sistema NO es solo una app móvil. Es una plataforma web responsiva (Desktop, Tablet, Mobile) construida con React y Tailwind.
 
-Backend: Laravel 11 con PHP 8.2, arquitectura hexagonal estricta
-Frontend: React con TypeScript y Tailwind
-Base de datos: MySQL 8
-Cache y colas: Redis
-El sistema corre directamente en Windows 11 sin Docker. El usuario tiene instalado PHP 8.2, Composer 2.9, Node.js 24 y MySQL. No tiene Redis todavía.
+A partir de este momento, además de las reglas estrictas de backend y arquitectura que ya te di, debes adoptar el rol de un Diseñador UI/UX Senior. Quiero una interfaz de nivel mundial, intuitiva, limpia y orientada a la conversión.
 
-La pasarela de pagos está excluida del alcance por ahora. No la implementes, no la menciones como bloqueante y no dejes código que dependa de ella para que el resto funcione.
+1. REFERENCIAS VISUALES Y MENTALIDAD DE DISEÑO
 
-El documento maestro
-Existe un archivo llamado Documento_Arquitectonico_Maestro_v2.docx dentro de la carpeta docs/ del repositorio. Ese documento es la fuente de verdad absoluta de todas las decisiones de arquitectura, reglas de negocio, esquema de base de datos, máquina de estados, actores del sistema y requerimientos funcionales. Antes de diseñar cualquier cosa, léelo completo. Si en algún momento no tienes acceso a él, me lo dices y yo te lo proporciono.
+Inspiración Estructural: Toma como referencia principal a Airbnb. Quiero esa limpieza visual, mucho espacio en blanco (whitespace), bordes redondeados (rounded-2xl o rounded-xl en Tailwind), y sombras suaves (shadow-sm y shadow-md en hover).
 
-Los cuatro actores del sistema
-El sistema tiene cuatro tipos de usuario con roles completamente separados. Ningún actor puede ver ni hacer lo que corresponde a otro:
-El Usuario es el jugador que busca canchas, hace reservas y paga un anticipo digital. Accede desde la web o móvil.
-El Partner es el dueño del complejo deportivo. Configura sus canchas, horarios y precios, gestiona su staff y ve la analítica de su negocio. Accede desde un dashboard web.
-El Staff es el empleado que trabaja en el complejo. Abre y cierra turnos, escanea QR de los jugadores al llegar y registra reservas presenciales. Accede desde una PWA optimizada para móvil.
-El Admin es el administrador de la plataforma. Aprueba Partners, resuelve disputas y configura las reglas globales. Accede desde un backoffice interno.
+Inspiración Funcional: Toma referencias de apps deportivas como Playtomic. La interfaz debe transmitir acción, con colores de acento claros (te sugiero un Verde Esmeralda deportivo o un Azul Eléctrico para los botones de Call-To-Action).
 
-Cómo debes organizar tu trabajo
-Al comenzar, lo primero que debes hacer es presentarme un plan de acción completo dividido en fases. Cada fase debe tener un nombre, un objetivo claro, una lista de tareas específicas y una estimación de qué archivos se van a crear o modificar. Espera mi aprobación antes de empezar cualquier fase.
-El plan debe estar diseñado de forma que si la sesión se interrumpe por cualquier motivo, cualquier agente que retome el trabajo en el futuro pueda leer el plan, ver qué fases están completas y cuáles no, y continuar exactamente desde donde se quedó sin necesidad de rehacer nada. Para esto, al terminar cada fase me pedirás que actualice un archivo de progreso que tú me dictarás, con el estado actual del proyecto.
-Dentro de cada fase, el orden de trabajo es siempre este: primero la migración de base de datos, luego la capa de dominio, luego los casos de uso, luego la infraestructura y finalmente el frontend. Nunca al revés.
+Modo Oscuro/Claro: Por ahora enfócate en un Modo Claro (Light Mode) ultra limpio. Fondo principal gris muy claro (bg-gray-50) y tarjetas en blanco puro (bg-white).
 
-Reglas de arquitectura que nunca puedes violar
-La arquitectura es hexagonal con tres capas. El Dominio contiene las entidades, value objects, eventos y las interfaces de los puertos. No importa nada de Laravel. La capa de Aplicación orquesta los casos de uso y llama a los puertos por sus interfaces. La capa de Infraestructura implementa los puertos y expone la API HTTP. Un archivo en la capa de Dominio que tenga un use Illuminate\... es un error grave que debes corregir antes de continuar.
-Sobre la base de datos: todos los montos son DECIMAL(10,2) sin excepción. Todos los timestamps son UTC con tipo dateTime. Cada migración tiene su método down() funcional. Las búsquedas geográficas usan índices SPATIAL de MySQL, nunca cálculos en PHP. El campo de ubicación de los venues usa el tipo POINT con SRID 4326.
-Sobre la concurrencia en reservas: cuando un usuario intenta reservar un slot, el sistema debe usar simultáneamente un lock distribuido en Redis con TTL de 600 segundos y una verificación optimista en MySQL con la columna version. Si cualquiera de los dos mecanismos falla, la operación se rechaza con error 409. Esto nunca es opcional.
-Sobre los webhooks de pago: aunque la pasarela está excluida del alcance actual, la arquitectura debe dejar el espacio preparado para recibirlos. La confirmación de una reserva como pagada nunca puede venir del frontend. Solo puede venir de un webhook firmado que llegue al backend.
+2. ESTRUCTURA DE LAYOUTS (ESCRITORIO VS. MÓVIL)
+No puedes usar el mismo layout para ambas pantallas. Debes usar Tailwind para hacer el cambio estructural:
 
-Reglas de seguridad
-Nunca escribas secretos, API keys, contraseñas ni URLs de producción en el código. Todo va en variables de entorno y en el archivo .env que nunca se commitea. El archivo .gitignore debe excluir .env desde el primer commit. Los tokens de autenticación tienen scope por rol. Los tokens del Staff expiran al cierre de su turno.
+Navegación:
 
-Reglas de calidad de código
-PHP con declare(strict_types=1) en todos los archivos. PHPStan nivel 8. TypeScript en modo strict. No hay dd(), var_dump() ni console.log en código que se vaya a commitear. Los comentarios explican el por qué, no el qué.
+Desktop (md y superiores): Top Navbar fijo con el Logo a la izquierda, enlaces al centro y perfil/acciones a la derecha.
 
-Lo que necesito que hagas ahora mismo
-Lee el AGENTS.md, lee todos los SKILL.md disponibles en .agents/skills/, y lee el Documento_Arquitectonico_Maestro_v2.docx. Luego preséntame el plan de acción completo por fases como te describí arriba. No escribas código todavía. No instales nada todavía. Solo el plan, para que yo lo revise y apruebe antes de que empieces.
+Mobile (sm e inferiores): Bottom Navigation Bar fijo en la parte inferior para los usuarios finales (Jugadores). Para el Admin/Partner, menú lateral (Sidebar) que se oculta bajo un menú hamburguesa.
+
+Página Principal (Home / Feed de Canchas):
+
+Hero Section: En desktop, un banner atractivo con un buscador central flotante (¿Dónde?, ¿Cuándo?, Hora). En móvil, un buscador compacto pegado arriba.
+
+Resultados: Un grid responsive (grid-cols-1 en móvil, grid-cols-2 en tablet, grid-cols-3 o 4 en desktop). Las tarjetas (Cards) de las canchas deben tener la foto principal arriba, título, ubicación, distancia y precio por hora. Usa efecto de escalado suave al hacer hover (hover:scale-[1.02] transition-transform).
+
+Flujo de Reserva (Página de Detalles del Venue):
+
+Desktop: Layout de dos columnas. A la izquierda: fotos en galería estilo Airbnb, descripción de la cancha y la grilla de horarios (slots). A la derecha: Un componente Sticky (fijo al hacer scroll) que muestre el "Resumen de la reserva" con el desglose de precios y el botón gigante de "Pagar Anticipo S/ 1.00".
+
+Mobile: Layout apilado (una sola columna). El resumen de reserva no debe estorbar, se convierte en una barra fija en la parte inferior de la pantalla (Sticky Bottom Bar) con el precio y el botón "Reservar" siempre visible.
+
+3. MICRO-INTERACCIONES Y UX
+
+Carga: Nada de pantallas en blanco. Usa Skeleton Loaders (animaciones de pulso en Tailwind animate-pulse) mientras se hace fetching de datos desde Laravel.
+
+Feedback: Todo botón debe tener un estado :hover, :active, y :disabled.
+
+Grilla de Horarios (Slots): Los bloques de tiempo deben ser botones fácilmente tocables (mínimo 44x44px para dedos en móvil). Si están ocupados (Gris/Deshabilitado), si están libres (Blanco con borde), si están seleccionados (Color primario lleno).
+
+4. LO QUE NECESITO QUE HAGAS AHORA
+Antes de escribir el código de los componentes React, preséntame un Esquema de Diseño (Design System) y Layout. Descríbeme:
+
+La paleta de colores de Tailwind que usarás (Primary, Secondary, Background, Text).
+
+Cómo estructurarás los componentes principales en Desktop y cómo se transformarán en Mobile.
+
+Confirma que entiendes que la lógica de negocio, arquitectura y concurrencia del Backend (establecida en nuestras reglas maestras) permanece intacta e independiente de estas mejoras visuales.
+
+Espero tu propuesta visual y de componentes.

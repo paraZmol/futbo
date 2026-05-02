@@ -1,10 +1,15 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import laravel from 'laravel-vite-plugin';
 import path from 'path';
 
 export default defineConfig({
     plugins: [
+        laravel({
+            input: ['resources/js/styles/tokens.css', 'resources/js/app/main.tsx'],
+            refresh: true,
+        }),
         react(),
         tailwindcss(),
     ],
@@ -13,13 +18,9 @@ export default defineConfig({
             '@': path.resolve(__dirname, 'resources/js'),
         },
     },
-    root: '.',
     build: {
         outDir: 'public/build',
         emptyOutDir: true,
-        rollupOptions: {
-            input: 'resources/js/app/main.tsx',
-        },
     },
     server: {
         port: 5173,
