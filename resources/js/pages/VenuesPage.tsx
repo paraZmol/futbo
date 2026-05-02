@@ -31,12 +31,14 @@ export default function VenuesPage() {
     const sport = searchParams.get('sport') ?? 'futbol5';
     const date  = searchParams.get('date') ?? new Date().toISOString().split('T')[0]!;
 
-    const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+    // Lima como coordenadas por defecto — se reemplaza con la ubicación real si el usuario la permite
+    const [coords, setCoords] = useState<{ lat: number; lng: number }>({ lat: -12.0464, lng: -77.0428 });
 
     useEffect(() => {
         navigator.geolocation?.getCurrentPosition(
             (pos) => setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-            () => setCoords({ lat: -12.0464, lng: -77.0428 }),
+            () => { /* mantiene Lima por defecto */ },
+            { timeout: 5000 },
         );
     }, []);
 

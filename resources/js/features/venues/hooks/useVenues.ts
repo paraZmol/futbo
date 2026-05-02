@@ -7,7 +7,7 @@ export function useVenueSearch(params: VenueSearchParams) {
         queryKey: ['venues', 'search', params],
         queryFn: () => searchVenues(params),
         staleTime: 60_000,
-        enabled: !!(params.lat && params.lng),
+        enabled: true, // siempre busca — Lima es el default si no hay geolocalización
     });
 }
 
