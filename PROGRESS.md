@@ -15,10 +15,10 @@
 | 3 | Puertos de Aplicación y Casos de Uso Core | ✅ COMPLETA | 2026-05-02 |
 | 4 | Infraestructura Backend | ✅ COMPLETA | 2026-05-02 |
 | 5 | Frontend: App Usuario | ✅ COMPLETA | 2026-05-02 |
-| 6 | Frontend: PWA Staff | 🔄 EN PROGRESO | 2026-05-02 |
-| 7 | Frontend: Dashboard Partner | ⬜ PENDIENTE | — |
-| 8 | Frontend: Backoffice Admin | ⬜ PENDIENTE | — |
-| 9 | Contratos OpenAPI y Tests E2E | ⬜ PENDIENTE | — |
+| 6 | Frontend: PWA Staff | ✅ COMPLETA | 2026-05-02 |
+| 7 | Frontend: Dashboard Partner | ✅ COMPLETA | 2026-05-02 |
+| 8 | Frontend: Backoffice Admin | ✅ COMPLETA | 2026-05-02 |
+| 9 | Contratos OpenAPI y Tests E2E | 🔄 EN PROGRESO | 2026-05-02 |
 
 ---
 
