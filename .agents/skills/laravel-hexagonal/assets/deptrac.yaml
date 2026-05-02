@@ -1,0 +1,41 @@
+parameters:
+  paths:
+    - app
+
+  layers:
+    - name: Domain
+      collectors:
+        - type: directory
+          regex: app/Domain/.*
+
+    - name: Application
+      collectors:
+        - type: directory
+          regex: app/Application/.*
+
+    - name: Infrastructure
+      collectors:
+        - type: directory
+          regex: app/Infrastructure/.*
+
+    - name: Vendor
+      collectors:
+        - type: bool
+          must:
+            - type: classLike
+              value: ^(Illuminate|Symfony|Carbon|Laravel|Eloquent).*
+            - type: classLike
+              value: ^App\\Models\\.*
+
+  ruleset:
+    Domain:
+      # Domain no depende de NADA de framework ni de otras capas
+      - +Domain
+    Application:
+      - Domain
+    Infrastructure:
+      - Domain
+      - Application
+      - Vendor
+
+  skip_violations: []
