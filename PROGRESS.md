@@ -10,8 +10,8 @@
 | Fase | Nombre | Estado | Fecha |
 |------|--------|--------|-------|
 | 0 | Fundamentos del Proyecto | ✅ COMPLETA | 2026-05-02 |
-| 1 | Migraciones de Base de Datos | 🔄 EN PROGRESO | 2026-05-02 |
-| 2 | Capa de Dominio | ⬜ PENDIENTE | — |
+| 1 | Migraciones de Base de Datos | ✅ COMPLETA | 2026-05-02 |
+| 2 | Capa de Dominio | 🔄 EN PROGRESO | 2026-05-02 |
 | 3 | Puertos de Aplicación y Casos de Uso Core | ⬜ PENDIENTE | — |
 | 4 | Infraestructura Backend | ⬜ PENDIENTE | — |
 | 5 | Frontend: App Usuario | ⬜ PENDIENTE | — |
